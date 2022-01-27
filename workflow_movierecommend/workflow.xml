@@ -1,0 +1,137 @@
+<workflow-app xmlns="uri:oozie:workflow:1.0" name="hd-ml-wf">
+    <start to="parallel-import-fork"/>
+    <fork name="parallel-import-fork">
+        <path start="import-rating-dataset"/>
+        <path start="import-movie-dataset"/>
+    </fork>
+    <action name="import-rating-dataset">
+        <sqoop xmlns="uri:oozie:sqoop-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/movie_record"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>import -connect jdbc:postgresql://product:5432/movie_db -username umroot -password umroot -table movie_record --fields-terminated-by , -m 1</command>
+        </sqoop>
+        <ok to="mr-movie-similarities"/>
+        <error to="fail"/>
+    </action>
+    <action name="import-movie-dataset">
+        <sqoop xmlns="uri:oozie:sqoop-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/movie_record2"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>import -connect jdbc:postgresql://product:5432/movie_db -username umroot -password umroot -table movie_record2 --fields-terminated-by | -m 1</command>
+        </sqoop>
+        <ok to="mr-gen-name-id-pair"/>
+        <error to="fail"/>
+    </action>
+    <action name="mr-movie-similarities">
+        <shell xmlns="uri:oozie:shell-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/output_movie_similar"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>mr_moviesimilarity.py</exec>
+            <argument>-r</argument>
+            <argument>hadoop</argument>
+            <argument>${nameNode}/user/${wf:user()}/movie_record/*</argument>
+            <argument>--output</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_movie_similar</argument>
+            <file>${nameNode}/user/${wf:user()}/workflow2/mr_moviesimilarity.py#mr_moviesimilarity.py</file>
+        </shell>
+        <ok to="join-1"/>
+        <error to="fail"/>
+    </action>
+    <action name="mr-gen-name-id-pair">
+        <shell xmlns="uri:oozie:shell-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/output_movie_name_id"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>mr_nameid.py</exec>
+            <argument>-r</argument>
+            <argument>hadoop</argument>
+            <argument>${nameNode}/user/${wf:user()}/movie_record2/*</argument>
+            <argument>--output</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_movie_name_id</argument>
+            <file>${nameNode}/user/${wf:user()}/workflow2/mr_nameid.py#mr_nameid.py</file>
+        </shell>
+        <ok to="join-1"/>
+        <error to="fail"/>
+    </action>
+    <join name="join-1" to="mr-generate-recommender"/>
+    <action name="mr-generate-recommender">
+        <shell xmlns="uri:oozie:shell-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/output_movie_final"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>mr_laststep.py</exec>
+            <argument>-r</argument>
+            <argument>hadoop</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_movie_similar/*</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_movie_name_id/*</argument>
+            <argument>--output</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_movie_final</argument>
+            <file>${nameNode}/user/${wf:user()}/workflow2/mr_laststep.py#mr_laststep.py</file>
+        </shell>
+        <ok to="deploy-system"/>
+        <error to="fail"/>
+    </action>
+    <action name="deploy-system">
+        <shell xmlns="uri:oozie:shell-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>deploy.py</exec>
+            <file>${nameNode}/user/${wf:user()}/workflow/deploy.py#deploy.py</file>
+        </shell>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>Movie Recommender Processing failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

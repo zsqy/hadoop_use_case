@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  
+       http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<configuration>
+
+    <!--
+        Refer to the oozie-default.xml file for the complete list of
+        Oozie configuration properties and their default values.
+    -->
+
+    <!-- Proxyuser Configuration -->
+
+    <!--
+
+    <property>
+        <name>oozie.service.ProxyUserService.proxyuser.#USER#.hosts</name>
+        <value>*</value>
+        <description>
+            List of hosts the '#USER#' user is allowed to perform 'doAs'
+            operations.
+
+            The '#USER#' must be replaced with the username o the user who is
+            allowed to perform 'doAs' operations.
+
+            The value can be the '*' wildcard or a list of hostnames.
+
+            For multiple users copy this property and replace the user name
+            in the property name.
+        </description>
+    </property>
+
+    <property>
+        <name>oozie.service.ProxyUserService.proxyuser.#USER#.groups</name>
+        <value>*</value>
+        <description>
+            List of groups the '#USER#' user is allowed to impersonate users
+            from to perform 'doAs' operations.
+
+            The '#USER#' must be replaced with the username o the user who is
+            allowed to perform 'doAs' operations.
+
+            The value can be the '*' wildcard or a list of groups.
+
+            For multiple users copy this property and replace the user name
+            in the property name.
+        </description>
+    </property>
+
+    -->
+
+    <property>
+        <name>oozie.http.hostname</name>
+        <value>namenode1</value>
+        <description>
+            Oozie server host name. The network interface Oozie server binds to as an IP address or a hostname.
+            Most users won't need to change this setting from the default value.
+        </description>
+    </property>
+    <property>
+        <name>oozie.service.HadoopAccessorService.hadoop.configurations</name>
+        <value>*=/home/ec2-user/hadoop/etc/hadoop/</value>
+        <description>
+            Comma separated AUTHORITY=HADOOP_CONF_DIR, where AUTHORITY is the HOST:PORT of
+            the Hadoop service (JobTracker, HDFS). The wildcard '*' configuration is
+            used when there is no exact match for an authority. The HADOOP_CONF_DIR contains
+            the relevant Hadoop *-site.xml files. If the path is relative is looked within
+            the Oozie configuration directory; though the path can be absolute (i.e. to point
+            to Hadoop client conf/ directories in the local filesystem.
+        </description>
+    </property>
+
+    <property>
+        <name>oozie.service.WorkflowAppService.system.libpath</name>
+        <value>hdfs:///user/${user.name}/share/lib</value>
+        <description>
+            System library path to use for workflow applications.
+            This path is added to workflow application if their job properties sets
+            the property 'oozie.use.system.libpath' to true.
+        </description>
+    </property>
+    <property>
+        <name>oozie.service.CallableQueueService.callable.concurrency</name>
+        <value>4</value>
+    </property>
+    <property>
+        <description>
+            Oozie server timezone. Valid values are UTC and GMT(+/-)####, for example 'GMT+0530' would be India
+            timezone. All dates parsed and genered dates by Oozie Coordinator/Bundle will be done in the specified
+            timezone. The default value of 'UTC' should not be changed under normal circumtances. If for any reason
+            is changed, note that GMT(+/-)#### timezones do not observe DST changes.
+        </description>
+        <name>oozie.processing.timezone</name>
+        <value>GMT+0800</value>
+    </property>
+
+</configuration>

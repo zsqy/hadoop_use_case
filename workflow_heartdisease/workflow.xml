@@ -1,0 +1,90 @@
+<workflow-app xmlns="uri:oozie:workflow:1.0" name="hd-ml-wf">
+    <start to="import-dataset"/>
+    <action name="import-dataset">
+        <sqoop xmlns="uri:oozie:sqoop-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/patient_record"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>import -connect jdbc:postgresql://product:5432/heart_disease_db -username umroot -password umroot -table patient_record -m 1</command>
+        </sqoop>
+        <ok to="map-reduce-clean-process"/>
+        <error to="fail"/>
+    </action>
+    <action name="map-reduce-clean-process">
+        <shell xmlns="uri:oozie:shell-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/output_mean"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>mr_mean.py</exec>
+            <argument>-r</argument>
+            <argument>hadoop</argument>
+            <argument>${nameNode}/user/${wf:user()}/patient_record/*</argument>
+            <argument>--output</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_mean</argument>
+            <file>${nameNode}/user/${wf:user()}/workflow/mr_mean.py#mr_mean.py</file>
+        </shell>
+        <ok to="map-reduce-train-validate"/>
+        <error to="fail"/>
+    </action>
+    <action name="map-reduce-train-validate">
+        <shell xmlns="uri:oozie:shell-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <prepare>
+                <delete path="${nameNode}/user/${wf:user()}/output_model"/>
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>mr_ml.py</exec>
+            <argument>-r</argument>
+            <argument>hadoop</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_mean/*</argument>
+            <argument>${nameNode}/user/${wf:user()}/patient_record/*</argument>
+            <argument>--output</argument>
+            <argument>${nameNode}/user/${wf:user()}/output_model</argument>
+            <file>${nameNode}/user/${wf:user()}/workflow/mr_ml.py#mr_ml.py</file>
+        </shell>
+        <ok to="deploy-model"/>
+        <error to="fail"/>
+    </action>
+    <action name="deploy-model">
+        <shell xmlns="uri:oozie:shell-action:1.0">
+            <resource-manager>${resourceManager}</resource-manager>
+            <name-node>${nameNode}</name-node>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <exec>deploy.py</exec>
+            <file>${nameNode}/user/${wf:user()}/workflow/deploy.py#deploy.py</file>
+        </shell>
+        <ok to="end"/>
+        <error to="fail"/>
+    </action>
+    <kill name="fail">
+        <message>Heart Disease Machine Learning Processing failed, error message[${wf:errorMessage(wf:lastErrorNode())}]</message>
+    </kill>
+    <end name="end"/>
+</workflow-app>

@@ -1,0 +1,12 @@
+<coordinator-app name="${appName}" 
+    frequency="${coord:days(1)}" 
+    start="${startTime}" 
+    end="${endTime}" 
+    timezone="GMT+0800"
+    xmlns="uri:oozie:coordinator:0.5">
+    <action>
+        <workflow>
+            <app-path>${nameNode}/user/ec2-user/workflow2/workflow.xml</app-path>
+        </workflow>
+    </action>
+</coordinator-app>

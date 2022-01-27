@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Wed Jan 12 16:03:00 MYT 2022:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.14.2.0 - (1828579): instance a816c00e-017e-4d4f-c36c-00000459f530 
+on database directory /home/ec2-user/oozie/data/oozie-db with class loader sun.misc.Launcher$AppClassLoader@7852e922 
+Loaded from file:/home/ec2-user/oozie/embedded-oozie-server/webapp/WEB-INF/lib/derby-10.14.2.0.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_311-b11
+user.dir=/home/ec2-user/oozie/conf
+os.name=Linux
+os.arch=amd64
+os.version=5.10.82-83.359.amzn2.x86_64
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
